@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดทำ Time Sheet (V13)</title>
+    <!-- เพิ่มไลบรารี SheetJS สำหรับอ่านไฟล์ Excel ในเบราว์เซอร์ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --secondary-color: #f8f9fa;
+            --border-color: #dee2e6;
+            --text-color: #333;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
+            --success-color: #28a745;
+        }
+        body {
+            font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 { color: var(--primary-color); display: inline-block; margin-bottom: 10px; }
+        h1 { text-align: center; display: block; }
+        
+        .top-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .box-panel {
+            padding: 15px;
+            background: var(--secondary-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .form-group-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .form-group input, .form-group select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        
+        .task-list {
+            margin-top: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            flex-grow: 1;
+        }
+        .task-category-header {
+            background-color: #e2e3e5;
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 0.85em;
+            color: #383d41;
+            border-bottom: 1px solid #ccc;
+            border-top: 1px solid #ccc;
+        }
+        .task-category-header:first-child { border-top: none; }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+        .task-item:last-child { border-bottom: none; }
+        .task-info { flex-grow: 1; }
+        .task-pm { color: #666; font-size: 0.85em; margin-left: 10px; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        /* Input & Clear Icon Styles */
+        .input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 95%;
+            margin-bottom: 5px;
+        }
+        .input-wrapper input[type="text"], .input-wrapper select {
+            width: 100%;
+            padding: 6px;
+            padding-right: 30px !important;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .clear-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+            line-height: 1;
+            padding: 2px;
+            z-index: 4;
+        }
+        .clear-icon:hover { color: var(--danger-color); }
+        .fill-handle {
+            position: absolute;
+            right: -4px;
+            bottom: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: var(--primary-color);
+            border: 1.5px solid #fff;
+            border-radius: 50%;
+            cursor: ns-resize;
+            z-index: 5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        .fill-handle:hover {
+            transform: scale(1.3);
+            background-color: #003d82;
+        }
+        
+        /* Custom Slider Style */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.85em;
+            color: #555;
+            padding: 0 5%;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 70%;
+            height: 6px;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            transition: background .15s ease-in-out;
+        }
+        input[type="range"]:disabled { background: #eee; }
+        input[type="range"]:disabled::-webkit-slider-thumb { background: #999; cursor: not-allowed; }
+        
+        .hour-val {
+            font-weight: bold;
+            color: var(--primary-color);
+            width: 35px;
+            text-align: right;
+            display: inline-block;
+        }
+
+        .total-text {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .total-text.zero { color: #999; }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+        .btn:hover { background-color: #004494; }
+        .btn-success { background-color: var(--success-color); padding: 10px 20px; font-size: 1em; }
+        .btn-success:hover { background-color: #218838; }
+        .btn-danger { background-color: var(--danger-color); padding: 4px 8px; font-size: 0.8em; }
+        .btn-danger:hover { background-color: #c82333; }
+        .btn-info { background-color: var(--info-color); padding: 6px 12px; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-info:hover { background-color: #117a8b; }
+        
+        .scrollable-table {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .summary-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: var(--secondary-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .filter-panel {
+            font-size: 0.85em;
+            color: #333;
+            margin-bottom: 10px;
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Tooltip CSS */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+            font-size: 14px;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 280px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -140px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: normal;
+            font-size: 13px;
+            line-height: 1.4;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.2);
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .top-sections { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>ระบบจัดทำ Time Sheet ผู้ปฏิบัติงาน</h1>
+    <p style="text-align: center; color: #666; margin-top: -10px;">(วันทำการ: 7 ชั่วโมง / เช้า 8:00-12:00, บ่าย 13:00-16:00)</p>
+    
+    <div class="top-sections">
+        <!-- ข้อมูลพนักงานและเดือน -->
+        <div class="box-panel">
+            <div>
+                <h3>1. ข้อมูลทั่วไป</h3>
+            </div>
+            <div class="form-group">
+                <label for="employeeName">ชื่อ-นามสกุล</label>
+                <input type="text" id="employeeName" placeholder="ระบุชื่อผู้ปฏิบัติงาน">
+            </div>
+            <div class="form-group-row">
+                <div class="form-group" style="flex: 1;">
+                    <label for="monthSelect">เดือน</label>
+                    <select id="monthSelect">
+                        <option value="1">มกราคม</option>
+                        <option value="2">กุมภาพันธ์</option>
+                        <option value="3">มีนาคม</option>
+                        <option value="4">เมษายน</option>
+                        <option value="5">พฤษภาคม</option>
+                        <option value="6">มิถุนายน</option>
+                        <option value="7">กรกฎาคม</option>
+                        <option value="8" selected>สิงหาคม</option>
+                        <option value="9">กันยายน</option>
+                        <option value="10">ตุลาคม</option>
+                        <option value="11">พฤศจิกายน</option>
+                        <option value="12">ธันวาคม</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="yearInput">ปี (พ.ศ.)</label>
+                    <input type="number" id="yearInput" value="2569">
+                </div>
+                <div class="form-group" style="flex: 2;">
+                    <label for="holidayInput" style="color: var(--danger-color);">
+                        วันหยุดตามประเพณี (วันที่)
+                        <span class="tooltip">ℹ️
+                            <span class="tooltiptext">ระบุวันที่ ที่ตรงกับวันหยุด คั่นด้วยลูกน้ำ (,) เช่น 12, 13 ระบบจะเปลี่ยนสีและล็อกชั่วโมงเป็น 0 ให้อัตโนมัติในตารางด้านล่าง</span>
+                        </span>
+                    </label>
+                    <input type="text" id="holidayInput" placeholder="เช่น 12, 13" onchange="generateTableRows()">
+                </div>
+            </div>
+        </div>
+
+        <!-- จัดการรายการงานและดึงข้อมูล Excel -->
+        <div class="box-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3>2. รายการงานที่ใช้บ่อย (Auto-fill)</h3>
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext"><b>หมายเหตุ:</b> รองรับเฉพาะไฟล์ Excel ที่กด <b>Export to Excel (ใบสั่งซ่อม)</b> จากระบบ <b>PM Order Online ของ อบย.</b> เท่านั้น เพื่อดึงชื่องานและ PM Order เข้าสู่รายการโดยอัตโนมัติ</span>
+                    </span>
+                </div>
+                <div class="btn-group">
+                    <input type="file" id="excelUpload" accept=".xls,.xlsx" style="display:none;" onchange="handleExcelUpload(event)">
+                    <button class="btn btn-info" onclick="document.getElementById('excelUpload').click()" style="margin-bottom: 0;">
+                        <span>📥 นำเข้าจาก Excel</span>
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteAllTasks()" style="margin-bottom: 0; padding: 6px 12px;">
+                        <span>🗑️ ลบทั้งหมด</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="filter-panel" style="margin-top: 10px;">
+                <strong>⚙️ ตัวกรองการนำเข้า (PM Order Online):</strong><br>
+                <label style="cursor: pointer;"><input type="checkbox" id="filterDelivered" checked> กรองงานสถานะ <b>"ส่งมอบงานแล้ว"</b> ออก</label><br>
+                <label style="cursor: pointer;"><input type="checkbox" id="filterCancelled" checked> กรองงานสถานะ <b>"ยกเลิกรายการ"</b> ออก</label>
+            </div>
+
+            <div class="form-group-row">
+                <div class="form-group" style="flex: 2; min-width: 200px;">
+                    <input type="text" id="newTaskName" placeholder="เพิ่มงานแบบกำหนดเอง...">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 120px;">
+                    <input type="text" id="newPMOrder" placeholder="PM Order (ถ้ามี)">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 140px;">
+                    <select id="newTaskCategory">
+                        <option value="งานปกติ">หมวด: งานปกติ</option>
+                        <option value="งานไม่ลง Man Hour">หมวด: งานไม่ลง Man Hour</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="addTask()" style="margin-bottom: 10px;">+ เพิ่ม</button>
+            </div>
+            
+            <div class="task-list" id="savedTaskList"></div>
+        </div>
+    </div>
+
+    <datalist id="taskDatalist"></datalist>
+
+    <div class="scrollable-table">
+        <table id="timesheetTable">
+            <thead>
+                <tr>
+                    <th width="4%">วันที่</th>
+                    <th width="6%">วัน</th>
+                    <th width="20%">
+                        รายละเอียดงาน เช้า (8:00-12:00)
+                        <span class="tooltip">ℹ️<span class="tooltiptext"><b>Drag to Copy:</b> คลิกค้างที่จุดวงกลมสีน้ำเงินมุมขวาล่างของช่องข้อมูล แล้วลากลงมาเพื่อคัดลอกข้อมูลไปยังวันอื่นๆ ได้ทันที</span></span>
+                    </th>
+                    <th width="10%">PM Order (เช้า)</th>
+                    <th width="20%">รายละเอียดงาน บ่าย (13:00-16:00)</th>
+                    <th width="10%">PM Order (บ่าย)</th>
+                    <th width="12%">สถานะ/ความเร่งด่วน</th>
+                    <th width="10%">ชั่วโมงรวม</th>
+                    <th width="8%">เคลียร์</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be generated by JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="actions">
+        <button class="btn" onclick="generateSummary()" style="padding: 10px 20px; font-size: 1em;">รีเฟรชสรุปผลเวลา</button>
+        <button class="btn btn-success" onclick="exportCSV()">ดาวน์โหลดไฟล์ CSV</button>
+    </div>
+
+    <div class="summary-container" id="summaryContainer">
+        <h2>สรุปการใช้เวลาแยกตามงาน / PM Order (คำนวณแบบ Real-time)</h2>
+        <table id="summaryTable">
+            <thead>
+                <tr>
+                    <th>หมวดหมู่</th>
+                    <th>PM Order / ชื่องาน</th>
+                    <th>จำนวนชั่วโมงรวม (ชม.)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Summary rows -->
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="2" style="text-align: right;">รวมทั้งหมด</th>
+                    <th id="totalHoursSummary">0</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<script>
+    const defaultNonManHourTasks = [
+        { id: 1, name: "ลาพักผ่อน / ลากิจ / ลาป่วย", pm: "", category: "งานไม่ลง Man Hour" },
+        { id: 2, name: "ประชุมแผนงาน / ประชุมประจำเดือน", pm: "", category: "งานไม่ลง Man Hour" },
+        { id: 3, name: "อบรม / สัมมนา", pm: "", category: "งานไม่ลง Man Hour" },
+        { id: 4, name: "ร่วมกิจกรรม", pm: "", category: "งานไม่ลง Man Hour" },
+        { id: 5, name: "วันหยุดตามประเพณี", pm: "", category: "งานไม่ลง Man Hour" }
+    ];
+
+    let tasks = JSON.parse(localStorage.getItem('myTimesheetTasks'));
+    let needSave = false;
+
+    if (!tasks) {
+        tasks = [...defaultNonManHourTasks];
+        needSave = true;
+    } else {
+        tasks.forEach(t => {
+            if (!t.category) {
+                t.category = 'งานปกติ';
+                needSave = true;
+            }
+        });
+
+        defaultNonManHourTasks.forEach(dt => {
+            if (!tasks.find(t => t.name === dt.name)) {
+                tasks.push(dt);
+                needSave = true;
+            }
+        });
+    }
+
+    if (needSave) saveTasksToStorage();
+
+    function saveTasksToStorage() {
+        localStorage.setItem('myTimesheetTasks', JSON.stringify(tasks));
+    }
+
+    function renderTaskList() {
+        const listEl = document.getElementById('savedTaskList');
+        const datalistEl = document.getElementById('taskDatalist');
+        
+        listEl.innerHTML = '';
+        datalistEl.innerHTML = '';
+
+        const categories = ["งานปกติ", "งานไม่ลง Man Hour"];
+
+        categories.forEach(cat => {
+            const catTasks = tasks.filter(t => t.category === cat);
+            
+            if (catTasks.length > 0) {
+                const header = document.createElement('div');
+                header.className = 'task-category-header';
+                header.innerText = cat;
+                listEl.appendChild(header);
+
+                catTasks.forEach(task => {
+                    const div = document.createElement('div');
+                    div.className = 'task-item';
+                    div.innerHTML = `
+                        <div class="task-info">
+                            <strong>${task.name}</strong> 
+                            <span class="task-pm">${task.pm ? '(PM: ' + task.pm + ')' : ''}</span>
+                        </div>
+                        <button class="btn-danger" onclick="deleteTask(${task.id})">ลบ</button>
+                    `;
+                    listEl.appendChild(div);
+
+                    const option = document.createElement('option');
+                    option.value = task.name;
+                    datalistEl.appendChild(option);
+                });
+            }
+        });
+    }
+
+    function addTask() {
+        const nameInput = document.getElementById('newTaskName');
+        const pmInput = document.getElementById('newPMOrder');
+        const catInput = document.getElementById('newTaskCategory');
+        
+        const name = nameInput.value.trim();
+        const pm = pmInput.value.trim();
+        const category = catInput.value;
+
+        if (name) {
+            tasks.push({ id: Date.now(), name: name, pm: pm, category: category });
+            saveTasksToStorage();
+            renderTaskList();
+            
+            nameInput.value = '';
+            pmInput.value = '';
+            nameInput.focus();
+        } else {
+            alert('กรุณาระบุรายละเอียดงาน');
+        }
+    }
+
+    function deleteTask(id) {
+        if(confirm('ต้องการลบงานนี้ออกจากรายการที่บันทึกไว้หรือไม่?')) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveTasksToStorage();
+            renderTaskList();
+        }
+    }
+
+    function deleteAllTasks() {
+        if(tasks.length === 0) return alert('ไม่มีรายการงานให้ลบ');
+        if(confirm('⚠️ คุณแน่ใจหรือไม่ว่าต้องการ "ลบรายการงานทั้งหมด" ที่บันทึกไว้? (การกระทำนี้ไม่สามารถย้อนกลับได้)')) {
+            tasks = [...defaultNonManHourTasks];
+            saveTasksToStorage();
+            renderTaskList();
+        }
+    }
+
+    function handleExcelUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const filterDelivered = document.getElementById('filterDelivered').checked;
+        const filterCancelled = document.getElementById('filterCancelled').checked;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                let addedCount = 0;
+                let skippedCount = 0;
+
+                json.forEach(row => {
+                    const taskName = row['ชื่องาน'];
+                    let pmOrder = row['ใบสั่งซ่อม (แม่)'] || row['ใบสั่งซ่อม (ลูก)'] || '';
+                    const statusStr = (row['สถานะรายการ'] || '').toString().trim();
+                    
+                    if (taskName) {
+                        if (filterDelivered && statusStr.includes('ส่งมอบงานแล้ว')) { skippedCount++; return; }
+                        if (filterCancelled && statusStr.includes('ยกเลิกรายการ')) { skippedCount++; return; }
+
+                        if (typeof pmOrder === 'number') pmOrder = Math.floor(pmOrder).toString();
+                        else if (typeof pmOrder === 'string') pmOrder = pmOrder.replace('.0', '').trim();
+
+                        if (!tasks.find(t => t.name === taskName.trim())) {
+                            tasks.push({ 
+                                id: Date.now() + Math.random(), 
+                                name: taskName.trim(), 
+                                pm: pmOrder,
+                                category: 'งานปกติ'
+                            });
+                            addedCount++;
+                        }
+                    }
+                });
+
+                if (addedCount > 0) {
+                    saveTasksToStorage();
+                    renderTaskList();
+                    alert(`นำเข้าข้อมูลสำเร็จ!\n- เพิ่มงานใหม่ ${addedCount} รายการ\n- กรองออก ${skippedCount} รายการ`);
+                } else {
+                    alert(`ไม่มีรายการใหม่ถูกเพิ่ม (อาจมีอยู่แล้ว หรือถูกกรองออกทั้งหมด)`);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel');
+            }
+            event.target.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // --- Input Clear Button Functions ---
+    function toggleClear(input) {
+        const clearIcon = input.nextElementSibling;
+        if (clearIcon && clearIcon.classList.contains('clear-icon')) {
+            clearIcon.style.display = input.value ? 'block' : 'none';
+        }
+    }
+    
+    function clearField(icon) {
+        const input = icon.previousElementSibling;
+        input.value = '';
+        input.dispatchEvent(new Event('input', {bubbles:true}));
+        input.dispatchEvent(new Event('change', {bubbles:true}));
+        icon.style.display = 'none';
+        input.focus();
+    }
+
+    // --- Smart Handling and Real-time Calculation ---
+    function handleTaskSelect(inputElement, timeSlot) {
+        const selectedValue = inputElement.value;
+        const matchedTask = tasks.find(t => t.name === selectedValue);
+        const row = inputElement.closest('tr');
+        
+        if (matchedTask) {
+            const pmInput = row.querySelector(`[data-fill="pm-${timeSlot}"]`);
+            if (!pmInput.value && matchedTask.pm) {
+                pmInput.value = matchedTask.pm;
+                pmInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            
+            const slider = timeSlot === 'morning' ? row.querySelector('.m-slider') : row.querySelector('.a-slider');
+            
+            if(matchedTask.category === 'งานไม่ลง Man Hour') {
+                slider.value = 0;
+                slider.disabled = true;
+            } else {
+                slider.disabled = false;
+                if (slider.value == 0 && !row.style.backgroundColor) { 
+                    slider.value = timeSlot === 'morning' ? 4 : 3;
+                }
+            }
+            updateRowHours(slider);
+        } else {
+            const slider = timeSlot === 'morning' ? row.querySelector('.m-slider') : row.querySelector('.a-slider');
+            if(slider) {
+                slider.disabled = false;
+                updateRowHours(slider);
+            }
+        }
+    }
+
+    function updateRowHours(element) {
+        const row = element.closest('tr');
+        const mSlider = row.querySelector('.m-slider');
+        const aSlider = row.querySelector('.a-slider');
+        const mVal = row.querySelector('.m-val');
+        const aVal = row.querySelector('.a-val');
+        const totalText = row.querySelector('.total-text');
+        
+        mVal.innerText = mSlider.value;
+        aVal.innerText = aSlider.value;
+        
+        const total = parseFloat(mSlider.value) + parseFloat(aSlider.value);
+        totalText.innerText = total;
+        
+        if(total === 0) {
+            totalText.classList.add('zero');
+        } else {
+            totalText.classList.remove('zero');
+        }
+        generateSummary();
+    }
+
+    const daysInTh = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+    
+    function generateTableRows() {
+        const tbody = document.querySelector('#timesheetTable tbody');
+        tbody.innerHTML = '';
+        const month = parseInt(document.getElementById('monthSelect').value);
+        const yearCE = parseInt(document.getElementById('yearInput').value) - 543; 
+        
+        const holidayStr = document.getElementById('holidayInput').value || '';
+        const holidayDates = holidayStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        
+        const daysInMonth = new Date(yearCE, month, 0).getDate();
+        
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateObj = new Date(yearCE, month - 1, i);
+            const dayName = daysInTh[dateObj.getDay()];
+            
+            const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+            const isHoliday = holidayDates.includes(i);
+            
+            let rowStyle = '';
+            if (isHoliday) rowStyle = 'background-color: #fff3cd;'; // Holiday color (yellowish)
+            else if (isWeekend) rowStyle = 'background-color: #fce4ec;'; // Weekend color (pinkish)
+            
+            const defaultM = (isWeekend || isHoliday) ? 0 : 4; 
+            const defaultA = (isWeekend || isHoliday) ? 0 : 3; 
+            const defaultTotal = defaultM + defaultA;
+            
+            const defaultTask = isHoliday ? 'วันหยุดตามประเพณี' : '';
+            const sliderState = isHoliday ? 'disabled' : '';
+            const clearDisplay = defaultTask ? 'display:block;' : 'display:none;';
+
+            const tr = document.createElement('tr');
+            tr.style.cssText = rowStyle;
+            tr.innerHTML = `
+                <td>${i}</td>
+                <td>${dayName}</td>
+                <td>
+                    <div class="input-wrapper">
+                        <input type="text" list="taskDatalist" class="task-morning" data-fill="morning" placeholder="เลือก/พิมพ์งาน..." value="${defaultTask}" oninput="handleTaskSelect(this, 'morning'); toggleClear(this)">
+                        <span class="clear-icon" onclick="clearField(this)" style="${clearDisplay}">&times;</span>
+                        <div class="fill-handle" data-fill-target="morning" title="ลากเพื่อคัดลอกลง"></div>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" class="m-slider" min="0" max="4" step="0.5" value="${defaultM}" ${sliderState} oninput="updateRowHours(this)">
+                        <span class="hour-val"><span class="m-val">${defaultM}</span></span> ชม.
+                    </div>
+                </td>
+                <td>
+                    <div class="input-wrapper">
+                        <input type="text" class="pm-morning" data-fill="pm-morning" placeholder="PM เช้า" oninput="toggleClear(this)">
+                        <span class="clear-icon" onclick="clearField(this)">&times;</span>
+                        <div class="fill-handle" data-fill-target="pm-morning" title="ลากเพื่อคัดลอกลง"></div>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-wrapper">
+                        <input type="text" list="taskDatalist" class="task-afternoon" data-fill="afternoon" placeholder="เลือก/พิมพ์งาน..." value="${defaultTask}" oninput="handleTaskSelect(this, 'afternoon'); toggleClear(this)">
+                        <span class="clear-icon" onclick="clearField(this)" style="${clearDisplay}">&times;</span>
+                        <div class="fill-handle" data-fill-target="afternoon" title="ลากเพื่อคัดลอกลง"></div>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" class="a-slider" min="0" max="3" step="0.5" value="${defaultA}" ${sliderState} oninput="updateRowHours(this)">
+                        <span class="hour-val"><span class="a-val">${defaultA}</span></span> ชม.
+                    </div>
+                </td>
+                <td>
+                    <div class="input-wrapper">
+                        <input type="text" class="pm-afternoon" data-fill="pm-afternoon" placeholder="PM บ่าย" oninput="toggleClear(this)">
+                        <span class="clear-icon" onclick="clearField(this)">&times;</span>
+                        <div class="fill-handle" data-fill-target="pm-afternoon" title="ลากเพื่อคัดลอกลง"></div>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-wrapper">
+                        <select class="task-status" data-fill="status" onchange="toggleClear(this)">
+                            <option value="">-</option>
+                            <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
+                            <option value="เร่งด่วน">เร่งด่วน</option>
+                            <option value="แล้วเสร็จ">แล้วเสร็จ</option>
+                        </select>
+                        <span class="clear-icon" onclick="clearField(this)">&times;</span>
+                        <div class="fill-handle" data-fill-target="status" title="ลากเพื่อคัดลอกลง"></div>
+                    </div>
+                </td>
+                <td class="total-text ${defaultTotal===0?'zero':''}">${defaultTotal}</td>
+                <td><button class="btn-danger" onclick="clearRow(this)">ล้าง</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+        generateSummary();
+    }
+
+    function clearRow(btn) {
+        const row = btn.closest('tr');
+        ['morning', 'afternoon', 'pm-morning', 'pm-afternoon', 'status'].forEach(field => {
+            const input = row.querySelector(`[data-fill="${field}"]`);
+            input.value = '';
+            toggleClear(input);
+        });
+        
+        const isWeekend = row.style.backgroundColor !== '';
+        row.querySelector('.m-slider').value = isWeekend ? 0 : 4;
+        row.querySelector('.m-slider').disabled = false;
+        row.querySelector('.a-slider').value = isWeekend ? 0 : 3;
+        row.querySelector('.a-slider').disabled = false;
+        
+        updateRowHours(row.querySelector('.m-slider'));
+    }
+
+    // --- Drag to Copy (Fill Handle) Logic ---
+    let dragState = { active: false, value: '', target: '' };
+
+    document.addEventListener('mousedown', e => {
+        if(e.target.classList.contains('fill-handle')) {
+            dragState.active = true;
+            dragState.target = e.target.getAttribute('data-fill-target');
+            
+            const input = e.target.parentElement.querySelector(`[data-fill="${dragState.target}"]`);
+            dragState.value = input.value;
+            
+            document.body.style.cursor = 'ns-resize'; 
+            e.preventDefault(); 
+        }
+    });
+
+    document.addEventListener('mouseover', e => {
+        if(dragState.active) {
+            const td = e.target.closest('td');
+            if(td) {
+                const input = td.querySelector(`[data-fill="${dragState.target}"]`);
+                if(input && input.value !== dragState.value) {
+                    input.value = dragState.value;
+                    input.dispatchEvent(new Event('input', {bubbles:true}));
+                    input.dispatchEvent(new Event('change', {bubbles:true}));
+                }
+            }
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if(dragState.active) {
+            dragState.active = false;
+            document.body.style.cursor = 'default';
+        }
+    });
+
+    // Initialization
+    renderTaskList();
+    document.getElementById('monthSelect').addEventListener('change', generateTableRows);
+    document.getElementById('yearInput').addEventListener('change', generateTableRows);
+    generateTableRows();
+
+    function generateSummary() {
+        const tbody = document.querySelector('#timesheetTable tbody');
+        const rows = tbody.querySelectorAll('tr');
+        const summaryData = {};
+        let totalHours = 0;
+
+        rows.forEach(row => {
+            const morning = row.querySelector('[data-fill="morning"]').value.trim();
+            const mHours = parseFloat(row.querySelector('.m-slider').value) || 0;
+            const pmMorning = row.querySelector('[data-fill="pm-morning"]').value.trim();
+            
+            const afternoon = row.querySelector('[data-fill="afternoon"]').value.trim();
+            const aHours = parseFloat(row.querySelector('.a-slider').value) || 0;
+            const pmAfternoon = row.querySelector('[data-fill="pm-afternoon"]').value.trim();
+
+            const processTask = (taskName, hours, pmOrder) => {
+                if (hours <= 0 && !taskName) return;
+                
+                let cat = 'งานปกติ';
+                let matched = tasks.find(t => t.name === taskName);
+                if(matched && matched.category) cat = matched.category;
+                
+                if (pmOrder && cat !== 'งานไม่ลง Man Hour') cat = 'งานปกติ';
+
+                let key = pmOrder;
+                if (!key) key = taskName || 'งานอื่นๆ ไม่ระบุ';
+                
+                const groupKey = cat + "||" + key;
+
+                if (!summaryData[groupKey]) summaryData[groupKey] = { hours: 0, category: cat, name: key };
+                summaryData[groupKey].hours += hours;
+                totalHours += hours;
+            };
+
+            if (mHours > 0 || morning) processTask(morning, mHours, pmMorning);
+            if (aHours > 0 || afternoon) processTask(afternoon, aHours, pmAfternoon);
+        });
+
+        const summaryTbody = document.querySelector('#summaryTable tbody');
+        summaryTbody.innerHTML = '';
+
+        for (const [groupKey, data] of Object.entries(summaryData)) {
+            if (data.hours > 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${data.category}</td>
+                    <td style="text-align: left;">${data.name}</td>
+                    <td>${data.hours.toFixed(2)}</td>
+                `;
+                summaryTbody.appendChild(tr);
+            }
+        }
+
+        document.getElementById('totalHoursSummary').innerText = totalHours.toFixed(2);
+    }
+
+    function exportCSV() {
+        const empName = document.getElementById('employeeName').value || 'Employee';
+        const monthText = document.getElementById('monthSelect').options[document.getElementById('monthSelect').selectedIndex].text;
+        const year = document.getElementById('yearInput').value;
+
+        let csvContent = "\uFEFF"; 
+        csvContent += `Time Sheet,,,,,,,\n`;
+        csvContent += `ชื่อ-นามสกุล,${empName},เดือน,${monthText},ปี,${year}\n\n`;
+        
+        csvContent += `วันที่,วัน,รายละเอียดงาน-เช้า,PM-Order(เช้า),ชม.(เช้า),รายละเอียดงาน-บ่าย,PM-Order(บ่าย),ชม.(บ่าย),สถานะ/ความเร่งด่วน,ชั่วโมงรวม\n`;
+        
+        const tbody = document.querySelector('#timesheetTable tbody');
+        const rows = tbody.querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            const date = row.cells[0].innerText;
+            const day = row.cells[1].innerText;
+            const morning = row.querySelector('[data-fill="morning"]').value.replace(/,/g, ' '); 
+            const pmMorning = row.querySelector('[data-fill="pm-morning"]').value.replace(/,/g, ' ');
+            const mHours = row.querySelector('.m-slider').value;
+            
+            const afternoon = row.querySelector('[data-fill="afternoon"]').value.replace(/,/g, ' ');
+            const pmAfternoon = row.querySelector('[data-fill="pm-afternoon"]').value.replace(/,/g, ' ');
+            const aHours = row.querySelector('.a-slider').value;
+            
+            const status = row.querySelector('[data-fill="status"]').value;
+            const total = row.querySelector('.total-text').innerText;
+            
+            csvContent += `${date},${day},${morning},${pmMorning},${mHours},${afternoon},${pmAfternoon},${aHours},${status},${total}\n`;
+        });
+
+        csvContent += `\nสรุปรายละเอียดงาน (Summary)\n`;
+        csvContent += `หมวดหมู่,PM Order / ชื่องาน,ชั่วโมงรวม\n`;
+        
+        const summaryTbody = document.querySelector('#summaryTable tbody');
+        const sumRows = summaryTbody.querySelectorAll('tr');
+        sumRows.forEach(row => {
+            const category = row.cells[0].innerText.replace(/,/g, ' ');
+            const key = row.cells[1].innerText.replace(/,/g, ' ');
+            const hours = row.cells[2].innerText;
+            csvContent += `${category},${key},${hours}\n`;
+        });
+        
+        const totalHours = document.getElementById('totalHoursSummary').innerText;
+        csvContent += `รวมทั้งหมด,,${totalHours}\n`;
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `TimeSheet_${empName}_${monthText}_${year}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>
