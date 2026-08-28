@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดทำ Time Sheet (V13)</title>
-    <!-- เพิ่มไลบรารี SheetJS สำหรับอ่านไฟล์ Excel ในเบราว์เซอร์ -->
+    <title>ระบบจัดทำ Time Sheet</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -133,14 +132,14 @@
         .input-wrapper input[type="text"], .input-wrapper select {
             width: 100%;
             padding: 6px;
-            padding-right: 30px !important;
+            padding-right: 35px !important;
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
         }
         .clear-icon {
             position: absolute;
-            right: 12px;
+            right: 15px;
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
@@ -280,7 +279,7 @@
         }
         .tooltip .tooltiptext {
             visibility: hidden;
-            width: 280px;
+            width: 250px;
             background-color: #333;
             color: #fff;
             text-align: left;
@@ -290,7 +289,7 @@
             z-index: 100;
             bottom: 125%;
             left: 50%;
-            margin-left: -140px;
+            margin-left: -125px;
             opacity: 0;
             transition: opacity 0.3s;
             font-weight: normal;
@@ -313,6 +312,17 @@
             opacity: 1;
         }
 
+        /* Bottom Tooltip */
+        .tooltip-bottom .tooltiptext {
+            bottom: auto;
+            top: 130%;
+        }
+        .tooltip-bottom .tooltiptext::after {
+            bottom: 100%;
+            top: auto;
+            border-color: transparent transparent #333 transparent;
+        }
+
         @media (max-width: 768px) {
             .top-sections { grid-template-columns: 1fr; }
         }
@@ -330,10 +340,31 @@
             <div>
                 <h3>1. ข้อมูลทั่วไป</h3>
             </div>
-            <div class="form-group">
-                <label for="employeeName">ชื่อ-นามสกุล</label>
-                <input type="text" id="employeeName" placeholder="ระบุชื่อผู้ปฏิบัติงาน">
+            <!-- แถวที่ 1: ชื่อ และ เลขประจำตัว -->
+            <div class="form-group-row">
+                <div class="form-group" style="flex: 2;">
+                    <label for="employeeName">ชื่อ-นามสกุล</label>
+                    <input type="text" id="employeeName" placeholder="ระบุชื่อผู้ปฏิบัติงาน">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="employeeId">เลขประจำตัว</label>
+                    <input type="text" id="employeeId" placeholder="ระบุเลขประจำตัว">
+                </div>
             </div>
+            
+            <!-- แถวที่ 2: แผนก และ กอง -->
+            <div class="form-group-row">
+                <div class="form-group" style="flex: 1;">
+                    <label for="department">แผนก</label>
+                    <input type="text" id="department" placeholder="ระบุแผนก">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="division">กอง</label>
+                    <input type="text" id="division" placeholder="ระบุกอง">
+                </div>
+            </div>
+
+            <!-- แถวที่ 3: เดือน ปี วันหยุด -->
             <div class="form-group-row">
                 <div class="form-group" style="flex: 1;">
                     <label for="monthSelect">เดือน</label>
@@ -359,7 +390,7 @@
                 <div class="form-group" style="flex: 2;">
                     <label for="holidayInput" style="color: var(--danger-color);">
                         วันหยุดตามประเพณี (วันที่)
-                        <span class="tooltip">ℹ️
+                        <span class="tooltip tooltip-bottom">ℹ️
                             <span class="tooltiptext">ระบุวันที่ ที่ตรงกับวันหยุด คั่นด้วยลูกน้ำ (,) เช่น 12, 13 ระบบจะเปลี่ยนสีและล็อกชั่วโมงเป็น 0 ให้อัตโนมัติในตารางด้านล่าง</span>
                         </span>
                     </label>
@@ -370,21 +401,23 @@
 
         <!-- จัดการรายการงานและดึงข้อมูล Excel -->
         <div class="box-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                 <div>
-                    <h3>2. รายการงานที่ใช้บ่อย (Auto-fill)</h3>
-                    <span class="tooltip">ℹ️
-                        <span class="tooltiptext"><b>หมายเหตุ:</b> รองรับเฉพาะไฟล์ Excel ที่กด <b>Export to Excel (ใบสั่งซ่อม)</b> จากระบบ <b>PM Order Online ของ อบย.</b> เท่านั้น เพื่อดึงชื่องานและ PM Order เข้าสู่รายการโดยอัตโนมัติ</span>
-                    </span>
+                    <h3 style="margin-top:0;">2. รายการงานที่ใช้บ่อย</h3>
                 </div>
-                <div class="btn-group">
-                    <input type="file" id="excelUpload" accept=".xls,.xlsx" style="display:none;" onchange="handleExcelUpload(event)">
-                    <button class="btn btn-info" onclick="document.getElementById('excelUpload').click()" style="margin-bottom: 0;">
-                        <span>📥 นำเข้าจาก Excel</span>
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteAllTasks()" style="margin-bottom: 0; padding: 6px 12px;">
-                        <span>🗑️ ลบทั้งหมด</span>
-                    </button>
+                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                    <div class="btn-group">
+                        <input type="file" id="excelUpload" accept=".xls,.xlsx" style="display:none;" onchange="handleExcelUpload(event)">
+                        <button class="btn btn-info" onclick="document.getElementById('excelUpload').click()" style="margin-bottom: 0;">
+                            <span>📥 นำเข้าจาก Excel</span>
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteAllTasks()" style="margin-bottom: 0; padding: 6px 12px;">
+                            <span>🗑️ ลบทั้งหมด</span>
+                        </button>
+                    </div>
+                    <small style="color: var(--danger-color); margin-top: 5px; font-size: 0.8em; max-width: 320px; text-align: right; line-height: 1.3;">
+                        *รองรับเฉพาะไฟล์ Excel ที่กด Export to Excel (ใบสั่งซ่อม) จากระบบ PM Order Online ของ อบย. เท่านั้น
+                    </small>
                 </div>
             </div>
 
@@ -424,7 +457,7 @@
                     <th width="6%">วัน</th>
                     <th width="20%">
                         รายละเอียดงาน เช้า (8:00-12:00)
-                        <span class="tooltip">ℹ️<span class="tooltiptext"><b>Drag to Copy:</b> คลิกค้างที่จุดวงกลมสีน้ำเงินมุมขวาล่างของช่องข้อมูล แล้วลากลงมาเพื่อคัดลอกข้อมูลไปยังวันอื่นๆ ได้ทันที</span></span>
+                        <span class="tooltip tooltip-bottom">ℹ️<span class="tooltiptext"><b>Drag to Copy:</b> คลิกค้างที่จุดวงกลมสีน้ำเงินมุมขวาล่างของช่องข้อมูล แล้วลากลงมาเพื่อคัดลอกข้อมูลไปยังวันอื่นๆ ได้ทันที</span></span>
                     </th>
                     <th width="10%">PM Order (เช้า)</th>
                     <th width="20%">รายละเอียดงาน บ่าย (13:00-16:00)</th>
@@ -633,7 +666,7 @@
                 }
             } catch (error) {
                 console.error(error);
-                alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel');
+                alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel (ตรวจสอบว่าเป็นไฟล์ที่ Export มาจากระบบ PM Order Online ของ อบย. จริงหรือไม่)');
             }
             event.target.value = '';
         };
@@ -734,8 +767,8 @@
             const isHoliday = holidayDates.includes(i);
             
             let rowStyle = '';
-            if (isHoliday) rowStyle = 'background-color: #fff3cd;'; // Holiday color (yellowish)
-            else if (isWeekend) rowStyle = 'background-color: #fce4ec;'; // Weekend color (pinkish)
+            if (isHoliday) rowStyle = 'background-color: #fff3cd;'; // Holiday color
+            else if (isWeekend) rowStyle = 'background-color: #fce4ec;'; // Weekend color
             
             const defaultM = (isWeekend || isHoliday) ? 0 : 4; 
             const defaultA = (isWeekend || isHoliday) ? 0 : 3; 
@@ -923,15 +956,20 @@
     }
 
     function exportCSV() {
-        const empName = document.getElementById('employeeName').value || 'Employee';
+        const empName = document.getElementById('employeeName').value || '-';
+        const empId = document.getElementById('employeeId').value || '-';
+        const dept = document.getElementById('department').value || '-';
+        const div = document.getElementById('division').value || '-';
+        
         const monthText = document.getElementById('monthSelect').options[document.getElementById('monthSelect').selectedIndex].text;
         const year = document.getElementById('yearInput').value;
 
         let csvContent = "\uFEFF"; 
-        csvContent += `Time Sheet,,,,,,,\n`;
-        csvContent += `ชื่อ-นามสกุล,${empName},เดือน,${monthText},ปี,${year}\n\n`;
+        csvContent += `Time Sheet,,,,,,,\\n`;
+        csvContent += `ชื่อ-นามสกุล,${empName},เลขประจำตัว,${empId},แผนก,${dept},กอง,${div}\\n`;
+        csvContent += `เดือน,${monthText},ปี,${year},,,\\n\\n`;
         
-        csvContent += `วันที่,วัน,รายละเอียดงาน-เช้า,PM-Order(เช้า),ชม.(เช้า),รายละเอียดงาน-บ่าย,PM-Order(บ่าย),ชม.(บ่าย),สถานะ/ความเร่งด่วน,ชั่วโมงรวม\n`;
+        csvContent += `วันที่,วัน,รายละเอียดงาน-เช้า,PM-Order(เช้า),ชม.(เช้า),รายละเอียดงาน-บ่าย,PM-Order(บ่าย),ชม.(บ่าย),สถานะ/ความเร่งด่วน,ชั่วโมงรวม\\n`;
         
         const tbody = document.querySelector('#timesheetTable tbody');
         const rows = tbody.querySelectorAll('tr');
@@ -950,11 +988,11 @@
             const status = row.querySelector('[data-fill="status"]').value;
             const total = row.querySelector('.total-text').innerText;
             
-            csvContent += `${date},${day},${morning},${pmMorning},${mHours},${afternoon},${pmAfternoon},${aHours},${status},${total}\n`;
+            csvContent += `${date},${day},${morning},${pmMorning},${mHours},${afternoon},${pmAfternoon},${aHours},${status},${total}\\n`;
         });
 
-        csvContent += `\nสรุปรายละเอียดงาน (Summary)\n`;
-        csvContent += `หมวดหมู่,PM Order / ชื่องาน,ชั่วโมงรวม\n`;
+        csvContent += `\\nสรุปรายละเอียดงาน (Summary)\\n`;
+        csvContent += `หมวดหมู่,PM Order / ชื่องาน,ชั่วโมงรวม\\n`;
         
         const summaryTbody = document.querySelector('#summaryTable tbody');
         const sumRows = summaryTbody.querySelectorAll('tr');
@@ -962,11 +1000,11 @@
             const category = row.cells[0].innerText.replace(/,/g, ' ');
             const key = row.cells[1].innerText.replace(/,/g, ' ');
             const hours = row.cells[2].innerText;
-            csvContent += `${category},${key},${hours}\n`;
+            csvContent += `${category},${key},${hours}\\n`;
         });
         
         const totalHours = document.getElementById('totalHoursSummary').innerText;
-        csvContent += `รวมทั้งหมด,,${totalHours}\n`;
+        csvContent += `รวมทั้งหมด,,${totalHours}\\n`;
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
