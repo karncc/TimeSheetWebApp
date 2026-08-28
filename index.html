@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดทำ Time Sheet</title>
+    <title>ระบบจัดทำ Time Sheet (V15)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -122,7 +122,6 @@
             z-index: 10;
         }
         
-        /* Input & Clear Icon Styles */
         .input-wrapper {
             position: relative;
             display: inline-block;
@@ -132,14 +131,14 @@
         .input-wrapper input[type="text"], .input-wrapper select {
             width: 100%;
             padding: 6px;
-            padding-right: 35px !important;
+            padding-right: 30px !important;
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
         }
         .clear-icon {
             position: absolute;
-            right: 15px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
@@ -171,7 +170,6 @@
             background-color: #003d82;
         }
         
-        /* Custom Slider Style */
         .slider-container {
             display: flex;
             align-items: center;
@@ -269,7 +267,6 @@
             align-items: center;
         }
 
-        /* Tooltip CSS */
         .tooltip {
             position: relative;
             display: inline-block;
@@ -311,8 +308,6 @@
             visibility: visible;
             opacity: 1;
         }
-
-        /* Bottom Tooltip */
         .tooltip-bottom .tooltiptext {
             bottom: auto;
             top: 130%;
@@ -335,12 +330,11 @@
     <p style="text-align: center; color: #666; margin-top: -10px;">(วันทำการ: 7 ชั่วโมง / เช้า 8:00-12:00, บ่าย 13:00-16:00)</p>
     
     <div class="top-sections">
-        <!-- ข้อมูลพนักงานและเดือน -->
         <div class="box-panel">
             <div>
                 <h3>1. ข้อมูลทั่วไป</h3>
+                <span class="tooltip" style="font-size: 12px; color: var(--info-color);">ℹ️ ข้อมูลในส่วนนี้จะถูกบันทึกอัตโนมัติ ไม่ต้องพิมพ์ใหม่ทุกครั้ง</span>
             </div>
-            <!-- แถวที่ 1: ชื่อ และ เลขประจำตัว -->
             <div class="form-group-row">
                 <div class="form-group" style="flex: 2;">
                     <label for="employeeName">ชื่อ-นามสกุล</label>
@@ -351,8 +345,6 @@
                     <input type="text" id="employeeId" placeholder="ระบุเลขประจำตัว">
                 </div>
             </div>
-            
-            <!-- แถวที่ 2: แผนก และ กอง -->
             <div class="form-group-row">
                 <div class="form-group" style="flex: 1;">
                     <label for="department">แผนก</label>
@@ -363,24 +355,14 @@
                     <input type="text" id="division" placeholder="ระบุกอง">
                 </div>
             </div>
-
-            <!-- แถวที่ 3: เดือน ปี วันหยุด -->
             <div class="form-group-row">
                 <div class="form-group" style="flex: 1;">
                     <label for="monthSelect">เดือน</label>
                     <select id="monthSelect">
-                        <option value="1">มกราคม</option>
-                        <option value="2">กุมภาพันธ์</option>
-                        <option value="3">มีนาคม</option>
-                        <option value="4">เมษายน</option>
-                        <option value="5">พฤษภาคม</option>
-                        <option value="6">มิถุนายน</option>
-                        <option value="7">กรกฎาคม</option>
-                        <option value="8" selected>สิงหาคม</option>
-                        <option value="9">กันยายน</option>
-                        <option value="10">ตุลาคม</option>
-                        <option value="11">พฤศจิกายน</option>
-                        <option value="12">ธันวาคม</option>
+                        <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option>
+                        <option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
+                        <option value="7">กรกฎาคม</option><option value="8" selected>สิงหาคม</option><option value="9">กันยายน</option>
+                        <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
                     </select>
                 </div>
                 <div class="form-group" style="flex: 1;">
@@ -391,19 +373,21 @@
                     <label for="holidayInput" style="color: var(--danger-color);">
                         วันหยุดตามประเพณี (วันที่)
                         <span class="tooltip tooltip-bottom">ℹ️
-                            <span class="tooltiptext">ระบุวันที่ ที่ตรงกับวันหยุด คั่นด้วยลูกน้ำ (,) เช่น 12, 13 ระบบจะเปลี่ยนสีและล็อกชั่วโมงเป็น 0 ให้อัตโนมัติในตารางด้านล่าง</span>
+                            <span class="tooltiptext">ระบุวันที่ ที่ตรงกับวันหยุด คั่นด้วยลูกน้ำ (,) เช่น 12, 13 ระบบจะเปลี่ยนสีและล็อกชั่วโมงเป็น 0 ให้อัตโนมัติในตารางด้านล่าง และข้อมูลวันหยุดจะถูกจำไว้แยกตามเดือน</span>
                         </span>
                     </label>
-                    <input type="text" id="holidayInput" placeholder="เช่น 12, 13" onchange="generateTableRows()">
+                    <input type="text" id="holidayInput" placeholder="เช่น 12, 13">
                 </div>
             </div>
         </div>
 
-        <!-- จัดการรายการงานและดึงข้อมูล Excel -->
         <div class="box-panel">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                 <div>
                     <h3 style="margin-top:0;">2. รายการงานที่ใช้บ่อย</h3>
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext"><b>หมายเหตุ:</b> รองรับเฉพาะไฟล์ Excel ที่กด <b>Export to Excel (ใบสั่งซ่อม)</b> จากระบบ <b>PM Order Online ของ อบย.</b> เท่านั้น เพื่อดึงชื่องานและ PM Order เข้าสู่รายการโดยอัตโนมัติ</span>
+                    </span>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-end;">
                     <div class="btn-group">
@@ -416,7 +400,7 @@
                         </button>
                     </div>
                     <small style="color: var(--danger-color); margin-top: 5px; font-size: 0.8em; max-width: 320px; text-align: right; line-height: 1.3;">
-                        *รองรับเฉพาะไฟล์ Excel ที่กด Export to Excel (ใบสั่งซ่อม) จากระบบ PM Order Online ของ อบย. เท่านั้น
+                        *รองรับเฉพาะไฟล์จากระบบ PM Order Online ของ อบย.
                     </small>
                 </div>
             </div>
@@ -457,7 +441,7 @@
                     <th width="6%">วัน</th>
                     <th width="20%">
                         รายละเอียดงาน เช้า (8:00-12:00)
-                        <span class="tooltip tooltip-bottom">ℹ️<span class="tooltiptext"><b>Drag to Copy:</b> คลิกค้างที่จุดวงกลมสีน้ำเงินมุมขวาล่างของช่องข้อมูล แล้วลากลงมาเพื่อคัดลอกข้อมูลไปยังวันอื่นๆ ได้ทันที</span></span>
+                        <span class="tooltip tooltip-bottom">ℹ️<span class="tooltiptext"><b>Drag to Copy:</b> คลิกค้างที่จุดวงกลมสีน้ำเงินมุมขวาล่างของช่องข้อมูล แล้วลากลงมาเพื่อคัดลอกข้อมูลไปยังวันอื่นๆ ได้ทันที และข้อมูลทั้งหมดในตารางจะถูกบันทึกอัตโนมัติ (Auto-save) ทันทีที่คุณพิมพ์</span></span>
                     </th>
                     <th width="10%">PM Order (เช้า)</th>
                     <th width="20%">รายละเอียดงาน บ่าย (13:00-16:00)</th>
@@ -502,6 +486,56 @@
 </div>
 
 <script>
+    const profileFields = ['employeeName', 'employeeId', 'department', 'division'];
+    profileFields.forEach(field => {
+        const el = document.getElementById(field);
+        if(el) {
+            el.value = localStorage.getItem('ts_' + field) || '';
+            el.addEventListener('input', () => {
+                localStorage.setItem('ts_' + field, el.value);
+            });
+        }
+    });
+
+    function loadHolidayData() {
+        const m = document.getElementById('monthSelect').value;
+        const y = document.getElementById('yearInput').value;
+        const holidayInput = document.getElementById('holidayInput');
+        holidayInput.value = localStorage.getItem(`holiday_${y}_${m}`) || '';
+    }
+
+    document.getElementById('holidayInput').addEventListener('input', function() {
+        const m = document.getElementById('monthSelect').value;
+        const y = document.getElementById('yearInput').value;
+        localStorage.setItem(`holiday_${y}_${m}`, this.value);
+    });
+    document.getElementById('holidayInput').addEventListener('change', generateTableRows);
+
+    function saveTimesheetData() {
+        const month = document.getElementById('monthSelect').value;
+        const year = document.getElementById('yearInput').value;
+        const key = `timesheet_${year}_${month}`;
+        const rows = document.querySelectorAll('#timesheetTable tbody tr');
+        const data = {};
+
+        rows.forEach((row, index) => {
+            const day = index + 1;
+            data[day] = {
+                mTask: row.querySelector('[data-fill="morning"]').value,
+                mPm: row.querySelector('[data-fill="pm-morning"]').value,
+                mHrs: row.querySelector('.m-slider').value,
+                aTask: row.querySelector('[data-fill="afternoon"]').value,
+                aPm: row.querySelector('[data-fill="pm-afternoon"]').value,
+                aHrs: row.querySelector('.a-slider').value,
+                status: row.querySelector('[data-fill="status"]').value
+            };
+        });
+        localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    document.getElementById('timesheetTable').addEventListener('input', saveTimesheetData);
+    document.getElementById('timesheetTable').addEventListener('change', saveTimesheetData);
+
     const defaultNonManHourTasks = [
         { id: 1, name: "ลาพักผ่อน / ลากิจ / ลาป่วย", pm: "", category: "งานไม่ลง Man Hour" },
         { id: 2, name: "ประชุมแผนงาน / ประชุมประจำเดือน", pm: "", category: "งานไม่ลง Man Hour" },
@@ -523,7 +557,6 @@
                 needSave = true;
             }
         });
-
         defaultNonManHourTasks.forEach(dt => {
             if (!tasks.find(t => t.name === dt.name)) {
                 tasks.push(dt);
@@ -541,15 +574,12 @@
     function renderTaskList() {
         const listEl = document.getElementById('savedTaskList');
         const datalistEl = document.getElementById('taskDatalist');
-        
         listEl.innerHTML = '';
         datalistEl.innerHTML = '';
 
         const categories = ["งานปกติ", "งานไม่ลง Man Hour"];
-
         categories.forEach(cat => {
             const catTasks = tasks.filter(t => t.category === cat);
-            
             if (catTasks.length > 0) {
                 const header = document.createElement('div');
                 header.className = 'task-category-header';
@@ -580,7 +610,6 @@
         const nameInput = document.getElementById('newTaskName');
         const pmInput = document.getElementById('newPMOrder');
         const catInput = document.getElementById('newTaskCategory');
-        
         const name = nameInput.value.trim();
         const pm = pmInput.value.trim();
         const category = catInput.value;
@@ -589,7 +618,6 @@
             tasks.push({ id: Date.now(), name: name, pm: pm, category: category });
             saveTasksToStorage();
             renderTaskList();
-            
             nameInput.value = '';
             pmInput.value = '';
             nameInput.focus();
@@ -673,7 +701,6 @@
         reader.readAsArrayBuffer(file);
     }
 
-    // --- Input Clear Button Functions ---
     function toggleClear(input) {
         const clearIcon = input.nextElementSibling;
         if (clearIcon && clearIcon.classList.contains('clear-icon')) {
@@ -690,7 +717,6 @@
         input.focus();
     }
 
-    // --- Smart Handling and Real-time Calculation ---
     function handleTaskSelect(inputElement, timeSlot) {
         const selectedValue = inputElement.value;
         const matchedTask = tasks.find(t => t.name === selectedValue);
@@ -704,7 +730,6 @@
             }
             
             const slider = timeSlot === 'morning' ? row.querySelector('.m-slider') : row.querySelector('.a-slider');
-            
             if(matchedTask.category === 'งานไม่ลง Man Hour') {
                 slider.value = 0;
                 slider.disabled = true;
@@ -724,7 +749,7 @@
         }
     }
 
-    function updateRowHours(element) {
+    function updateRowHours(element, doSummary = true) {
         const row = element.closest('tr');
         const mSlider = row.querySelector('.m-slider');
         const aSlider = row.querySelector('.a-slider');
@@ -738,12 +763,10 @@
         const total = parseFloat(mSlider.value) + parseFloat(aSlider.value);
         totalText.innerText = total;
         
-        if(total === 0) {
-            totalText.classList.add('zero');
-        } else {
-            totalText.classList.remove('zero');
-        }
-        generateSummary();
+        if(total === 0) totalText.classList.add('zero');
+        else totalText.classList.remove('zero');
+        
+        if (doSummary) generateSummary();
     }
 
     const daysInTh = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
@@ -752,12 +775,17 @@
         const tbody = document.querySelector('#timesheetTable tbody');
         tbody.innerHTML = '';
         const month = parseInt(document.getElementById('monthSelect').value);
-        const yearCE = parseInt(document.getElementById('yearInput').value) - 543; 
+        const year = document.getElementById('yearInput').value;
+        const yearCE = parseInt(year) - 543; 
         
         const holidayStr = document.getElementById('holidayInput').value || '';
         const holidayDates = holidayStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
         
         const daysInMonth = new Date(yearCE, month, 0).getDate();
+        
+        const key = `timesheet_${year}_${month}`;
+        const savedDataStr = localStorage.getItem(key);
+        const savedData = savedDataStr ? JSON.parse(savedDataStr) : null;
         
         for (let i = 1; i <= daysInMonth; i++) {
             const dateObj = new Date(yearCE, month - 1, i);
@@ -767,16 +795,33 @@
             const isHoliday = holidayDates.includes(i);
             
             let rowStyle = '';
-            if (isHoliday) rowStyle = 'background-color: #fff3cd;'; // Holiday color
-            else if (isWeekend) rowStyle = 'background-color: #fce4ec;'; // Weekend color
+            if (isHoliday) rowStyle = 'background-color: #fff3cd;'; 
+            else if (isWeekend) rowStyle = 'background-color: #fce4ec;'; 
             
-            const defaultM = (isWeekend || isHoliday) ? 0 : 4; 
-            const defaultA = (isWeekend || isHoliday) ? 0 : 3; 
-            const defaultTotal = defaultM + defaultA;
+            let defaultM = (isWeekend || isHoliday) ? 0 : 4; 
+            let defaultA = (isWeekend || isHoliday) ? 0 : 3; 
+            let defaultTaskM = isHoliday ? 'วันหยุดตามประเพณี' : '';
+            let defaultTaskA = isHoliday ? 'วันหยุดตามประเพณี' : '';
+            let defaultPmM = '';
+            let defaultPmA = '';
+            let defaultStatus = '';
             
-            const defaultTask = isHoliday ? 'วันหยุดตามประเพณี' : '';
-            const sliderState = isHoliday ? 'disabled' : '';
-            const clearDisplay = defaultTask ? 'display:block;' : 'display:none;';
+            if (savedData && savedData[i]) {
+                defaultTaskM = savedData[i].mTask !== undefined ? savedData[i].mTask : defaultTaskM;
+                defaultTaskA = savedData[i].aTask !== undefined ? savedData[i].aTask : defaultTaskA;
+                defaultPmM = savedData[i].mPm || '';
+                defaultPmA = savedData[i].aPm || '';
+                defaultM = savedData[i].mHrs !== undefined ? savedData[i].mHrs : defaultM;
+                defaultA = savedData[i].aHrs !== undefined ? savedData[i].aHrs : defaultA;
+                defaultStatus = savedData[i].status || '';
+            }
+            
+            const defaultTotal = parseFloat(defaultM) + parseFloat(defaultA);
+            
+            const isMTaskNonManHour = tasks.find(t => t.name === defaultTaskM && t.category === 'งานไม่ลง Man Hour');
+            const isATaskNonManHour = tasks.find(t => t.name === defaultTaskA && t.category === 'งานไม่ลง Man Hour');
+            const mSliderState = isMTaskNonManHour ? 'disabled' : '';
+            const aSliderState = isATaskNonManHour ? 'disabled' : '';
 
             const tr = document.createElement('tr');
             tr.style.cssText = rowStyle;
@@ -785,49 +830,49 @@
                 <td>${dayName}</td>
                 <td>
                     <div class="input-wrapper">
-                        <input type="text" list="taskDatalist" class="task-morning" data-fill="morning" placeholder="เลือก/พิมพ์งาน..." value="${defaultTask}" oninput="handleTaskSelect(this, 'morning'); toggleClear(this)">
-                        <span class="clear-icon" onclick="clearField(this)" style="${clearDisplay}">&times;</span>
+                        <input type="text" list="taskDatalist" class="task-morning" data-fill="morning" placeholder="เลือก/พิมพ์งาน..." value="${defaultTaskM}" oninput="handleTaskSelect(this, 'morning'); toggleClear(this)">
+                        <span class="clear-icon" onclick="clearField(this)" style="${defaultTaskM ? 'display:block;' : 'display:none;'}">&times;</span>
                         <div class="fill-handle" data-fill-target="morning" title="ลากเพื่อคัดลอกลง"></div>
                     </div>
                     <div class="slider-container">
-                        <input type="range" class="m-slider" min="0" max="4" step="0.5" value="${defaultM}" ${sliderState} oninput="updateRowHours(this)">
+                        <input type="range" class="m-slider" min="0" max="4" step="0.5" value="${defaultM}" ${mSliderState} oninput="updateRowHours(this)">
                         <span class="hour-val"><span class="m-val">${defaultM}</span></span> ชม.
                     </div>
                 </td>
                 <td>
                     <div class="input-wrapper">
-                        <input type="text" class="pm-morning" data-fill="pm-morning" placeholder="PM เช้า" oninput="toggleClear(this)">
-                        <span class="clear-icon" onclick="clearField(this)">&times;</span>
+                        <input type="text" class="pm-morning" data-fill="pm-morning" placeholder="PM เช้า" value="${defaultPmM}" oninput="toggleClear(this)">
+                        <span class="clear-icon" onclick="clearField(this)" style="${defaultPmM ? 'display:block;' : 'display:none;'}">&times;</span>
                         <div class="fill-handle" data-fill-target="pm-morning" title="ลากเพื่อคัดลอกลง"></div>
                     </div>
                 </td>
                 <td>
                     <div class="input-wrapper">
-                        <input type="text" list="taskDatalist" class="task-afternoon" data-fill="afternoon" placeholder="เลือก/พิมพ์งาน..." value="${defaultTask}" oninput="handleTaskSelect(this, 'afternoon'); toggleClear(this)">
-                        <span class="clear-icon" onclick="clearField(this)" style="${clearDisplay}">&times;</span>
+                        <input type="text" list="taskDatalist" class="task-afternoon" data-fill="afternoon" placeholder="เลือก/พิมพ์งาน..." value="${defaultTaskA}" oninput="handleTaskSelect(this, 'afternoon'); toggleClear(this)">
+                        <span class="clear-icon" onclick="clearField(this)" style="${defaultTaskA ? 'display:block;' : 'display:none;'}">&times;</span>
                         <div class="fill-handle" data-fill-target="afternoon" title="ลากเพื่อคัดลอกลง"></div>
                     </div>
                     <div class="slider-container">
-                        <input type="range" class="a-slider" min="0" max="3" step="0.5" value="${defaultA}" ${sliderState} oninput="updateRowHours(this)">
+                        <input type="range" class="a-slider" min="0" max="3" step="0.5" value="${defaultA}" ${aSliderState} oninput="updateRowHours(this)">
                         <span class="hour-val"><span class="a-val">${defaultA}</span></span> ชม.
                     </div>
                 </td>
                 <td>
                     <div class="input-wrapper">
-                        <input type="text" class="pm-afternoon" data-fill="pm-afternoon" placeholder="PM บ่าย" oninput="toggleClear(this)">
-                        <span class="clear-icon" onclick="clearField(this)">&times;</span>
+                        <input type="text" class="pm-afternoon" data-fill="pm-afternoon" placeholder="PM บ่าย" value="${defaultPmA}" oninput="toggleClear(this)">
+                        <span class="clear-icon" onclick="clearField(this)" style="${defaultPmA ? 'display:block;' : 'display:none;'}">&times;</span>
                         <div class="fill-handle" data-fill-target="pm-afternoon" title="ลากเพื่อคัดลอกลง"></div>
                     </div>
                 </td>
                 <td>
                     <div class="input-wrapper">
                         <select class="task-status" data-fill="status" onchange="toggleClear(this)">
-                            <option value="">-</option>
-                            <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
-                            <option value="เร่งด่วน">เร่งด่วน</option>
-                            <option value="แล้วเสร็จ">แล้วเสร็จ</option>
+                            <option value="" ${defaultStatus===''?'selected':''}>-</option>
+                            <option value="กำลังดำเนินการ" ${defaultStatus==='กำลังดำเนินการ'?'selected':''}>กำลังดำเนินการ</option>
+                            <option value="เร่งด่วน" ${defaultStatus==='เร่งด่วน'?'selected':''}>เร่งด่วน</option>
+                            <option value="แล้วเสร็จ" ${defaultStatus==='แล้วเสร็จ'?'selected':''}>แล้วเสร็จ</option>
                         </select>
-                        <span class="clear-icon" onclick="clearField(this)">&times;</span>
+                        <span class="clear-icon" onclick="clearField(this)" style="${defaultStatus ? 'display:block;' : 'display:none;'}">&times;</span>
                         <div class="fill-handle" data-fill-target="status" title="ลากเพื่อคัดลอกลง"></div>
                     </div>
                 </td>
@@ -854,19 +899,17 @@
         row.querySelector('.a-slider').disabled = false;
         
         updateRowHours(row.querySelector('.m-slider'));
+        saveTimesheetData();
     }
 
-    // --- Drag to Copy (Fill Handle) Logic ---
     let dragState = { active: false, value: '', target: '' };
 
     document.addEventListener('mousedown', e => {
         if(e.target.classList.contains('fill-handle')) {
             dragState.active = true;
             dragState.target = e.target.getAttribute('data-fill-target');
-            
             const input = e.target.parentElement.querySelector(`[data-fill="${dragState.target}"]`);
             dragState.value = input.value;
-            
             document.body.style.cursor = 'ns-resize'; 
             e.preventDefault(); 
         }
@@ -893,10 +936,18 @@
         }
     });
 
-    // Initialization
     renderTaskList();
-    document.getElementById('monthSelect').addEventListener('change', generateTableRows);
-    document.getElementById('yearInput').addEventListener('change', generateTableRows);
+    
+    document.getElementById('monthSelect').addEventListener('change', () => {
+        loadHolidayData();
+        generateTableRows();
+    });
+    document.getElementById('yearInput').addEventListener('change', () => {
+        loadHolidayData();
+        generateTableRows();
+    });
+    
+    loadHolidayData();
     generateTableRows();
 
     function generateSummary() {
@@ -964,12 +1015,12 @@
         const monthText = document.getElementById('monthSelect').options[document.getElementById('monthSelect').selectedIndex].text;
         const year = document.getElementById('yearInput').value;
 
-        let csvContent = "\uFEFF"; 
-        csvContent += `Time Sheet,,,,,,,\\n`;
-        csvContent += `ชื่อ-นามสกุล,${empName},เลขประจำตัว,${empId},แผนก,${dept},กอง,${div}\\n`;
-        csvContent += `เดือน,${monthText},ปี,${year},,,\\n\\n`;
+        let csvContent = "﻿"; 
+        csvContent += `Time Sheet,,,,,,,\n`;
+        csvContent += `ชื่อ-นามสกุล,${empName},เลขประจำตัว,${empId},แผนก,${dept},กอง,${div}\n`;
+        csvContent += `เดือน,${monthText},ปี,${year},,,\n\n`;
         
-        csvContent += `วันที่,วัน,รายละเอียดงาน-เช้า,PM-Order(เช้า),ชม.(เช้า),รายละเอียดงาน-บ่าย,PM-Order(บ่าย),ชม.(บ่าย),สถานะ/ความเร่งด่วน,ชั่วโมงรวม\\n`;
+        csvContent += `วันที่,วัน,รายละเอียดงาน-เช้า,PM-Order(เช้า),ชม.(เช้า),รายละเอียดงาน-บ่าย,PM-Order(บ่าย),ชม.(บ่าย),สถานะ/ความเร่งด่วน,ชั่วโมงรวม\n`;
         
         const tbody = document.querySelector('#timesheetTable tbody');
         const rows = tbody.querySelectorAll('tr');
@@ -988,11 +1039,11 @@
             const status = row.querySelector('[data-fill="status"]').value;
             const total = row.querySelector('.total-text').innerText;
             
-            csvContent += `${date},${day},${morning},${pmMorning},${mHours},${afternoon},${pmAfternoon},${aHours},${status},${total}\\n`;
+            csvContent += `${date},${day},${morning},${pmMorning},${mHours},${afternoon},${pmAfternoon},${aHours},${status},${total}\n`;
         });
 
-        csvContent += `\\nสรุปรายละเอียดงาน (Summary)\\n`;
-        csvContent += `หมวดหมู่,PM Order / ชื่องาน,ชั่วโมงรวม\\n`;
+        csvContent += `\nสรุปรายละเอียดงาน (Summary)\n`;
+        csvContent += `หมวดหมู่,PM Order / ชื่องาน,ชั่วโมงรวม\n`;
         
         const summaryTbody = document.querySelector('#summaryTable tbody');
         const sumRows = summaryTbody.querySelectorAll('tr');
@@ -1000,11 +1051,11 @@
             const category = row.cells[0].innerText.replace(/,/g, ' ');
             const key = row.cells[1].innerText.replace(/,/g, ' ');
             const hours = row.cells[2].innerText;
-            csvContent += `${category},${key},${hours}\\n`;
+            csvContent += `${category},${key},${hours}\n`;
         });
         
         const totalHours = document.getElementById('totalHoursSummary').innerText;
-        csvContent += `รวมทั้งหมด,,${totalHours}\\n`;
+        csvContent += `รวมทั้งหมด,,${totalHours}\n`;
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -1016,6 +1067,5 @@
         document.body.removeChild(link);
     }
 </script>
-
 </body>
 </html>
